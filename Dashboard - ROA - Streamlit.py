@@ -7,6 +7,7 @@ import datetime
 import openpyxl
 from openpyxl.styles import PatternFill, Font
 
+# --- PAGINA CONFIGURATIE ---
 st.set_page_config(page_title="ROA Dashboard", layout="wide")
 
 # --- BEVEILIGING CONFIGURATIE ---
@@ -40,10 +41,12 @@ for type_naam, bestandsnaam in AFBEELDING_CONFIG.items():
             pass
 
 BLOK_TIJDEN = {
-    '1': datetime.time(6, 0, 0), '2': datetime.time(7, 25, 0), '3': datetime.time(8, 50, 0),
-    '4': datetime.time(10, 15, 0), '5': datetime.time(11, 40, 0), '6': datetime.time(13, 5, 0),
-    '7': datetime.time(14, 30, 0), '8': datetime.time(15, 55, 0), '9': datetime.time(17, 20, 0),
-    '10': datetime.time(18, 45, 0), '11': datetime.time(20, 10, 0), '12': datetime.time(21, 35, 0)
+    '1':  datetime.time(6, 0, 0),  '2':  datetime.time(7, 25, 0),
+    '3':  datetime.time(8, 50, 0),  '4':  datetime.time(10, 15, 0),
+    '5':  datetime.time(11, 40, 0), '6':  datetime.time(13, 5, 0),
+    '7':  datetime.time(14, 30, 0), '8':  datetime.time(15, 55, 0),
+    '9':  datetime.time(17, 20, 0), '10': datetime.time(18, 45, 0),
+    '11': datetime.time(20, 10, 0), '12': datetime.time(21, 35, 0)
 }
 
 # --- SESSION STATE INITIALISATIE ---
@@ -86,7 +89,7 @@ if 'handmatige_vrijgaven' not in st.session_state:
 if 'blok_klik_teller' not in st.session_state:
     st.session_state.blok_klik_teller = {}
 
-# --- FUNCTIES ---
+# --- HULPFUNCTIES ---
 def probeer_getal(waarde):
     try:
         return float(waarde) if '.' in str(waarde) else int(waarde)
@@ -191,9 +194,9 @@ def log_klik_naar_excel(trolley_type, block, vluchtnummer, tijd_nu, actuele_voor
 
 # --- LOGIN SCHERM ---
 if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align: center;'>ROA Dashboard Login</h2>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
+    st.markdown("<h2 style='text-align: center; color: #2c3e50;'>ROA Dashboard Login</h2>", unsafe_allow_html=True)
+    c_l1, c_l2, c_l3 = st.columns([1, 1, 1])
+    with c_l2:
         username = st.text_input("Gebruikersnaam")
         password = st.text_input("Wachtwoord", type="password")
         if st.button("Inloggen", use_container_width=True):
@@ -206,18 +209,19 @@ if not st.session_state.logged_in:
                 st.error("Onjuiste gebruikersnaam of wachtwoord!")
     st.stop()
 
-# --- TIMER CLEANUP ---
+# --- TIMER OPBRUIMING ---
 nu_time = time.time()
 st.session_state.actieve_timers = [t for t in st.session_state.actieve_timers if nu_time < t['vrijgave_tijd']]
 
-# --- HOOFDSCHERM DASHBOARD ---
-st.markdown(f"<div style='text-align: right; font-weight: bold;'>{datetime.datetime.now().strftime('%d-%m-%Y | %H:%M:%S')}</div>", unsafe_allow_html=True)
-st.markdown("<h1 style='text-align: center;'>Beschikbare Vlucht Informatie - ROA</h1>", unsafe_allow_html=True)
+# --- HOOFDSCHERM ---
+st.markdown(f"<div style='text-align: right; font-weight: bold; color: #2c3e50;'>{datetime.datetime.now().strftime('%d-%m-%Y  |  %H:%M:%S')}</div>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #2c3e50;'>Beschikbare Vlucht Informatie -ROA</h1>", unsafe_allow_html=True)
 
-# Voorraad balken tonen
+# --- VOORRAAD BALKEN (EUR & KLC) ---
 st.markdown("### Actuele voorraad in EQH-afdeling:")
-cols_balk = st.columns(6)
 balk_data_stats = {}
+cols_balk = st.columns(6)
+
 for idx, col_name in enumerate(balk_kolommen):
     basis = st.session_state.absolute_voorraad.get(col_name, START_VOORRAAD_BASIS[col_name])
     t_plus = st.session_state.handmatige_plus.get(col_name, 0)
@@ -239,18 +243,19 @@ for idx, col_name in enumerate(balk_kolommen):
         img_file = AFBEELDING_CONFIG.get(col_name, '')
         img_path = os.path.join("assets", img_file)
         st.markdown(f"""
-            <div style='background-color: {bg}; color: {fg}; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px;'>
+            <div style='background-color: {bg}; color: {fg}; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 5px;'>
                 <b>{col_name}</b><br>
                 <span style='font-size: 18px;'>{actueel} / {doel}</span>
             </div>
         """, unsafe_allow_html=True)
         if os.path.exists(img_path):
-            st.image(img_path, width=70)
+            st.image(img_path, width=65)
 
 st.markdown("---")
 
-# Besturingselementen: Upload, Filter, Undo
+# --- CONTROLE BALK (Upload, Visualisatie, Blok Filter, Undo) ---
 c1, c2, c3, c4 = st.columns([2, 2, 2, 1])
+
 with c1:
     uploaded_file = st.file_uploader("Upload Excel Schema", type=["xlsx", "xls"])
     if uploaded_file is not None:
@@ -288,7 +293,7 @@ with c3:
 with c4:
     st.write("")
     st.write("")
-    if st.button("↩️ Ongedaan Maken"):
+    if st.button("↩️ Ongedaan Maken", use_container_width=True):
         historie = [a for a in st.session_state.actie_historie if (time.time() - a.get('timestamp', 0)) <= 900.0]
         if historie:
             laatste = historie.pop()
@@ -314,7 +319,7 @@ with c4:
                 st.success(f"Actie ongedaan gemaakt voor {t_col}!")
                 st.rerun()
 
-# Filter dataframe
+# --- FILTEREN & TABEL WEERGAVE ---
 df_filtered = df_current.copy()
 if not df_filtered.empty and 'Block' in df_filtered.columns:
     if selected_block == 'Ochtend':
@@ -324,7 +329,6 @@ if not df_filtered.empty and 'Block' in df_filtered.columns:
     elif selected_block and selected_block != 'Alle':
         df_filtered = df_filtered[df_filtered['Block'] == str(selected_block).strip()]
 
-# Bereid data voor weergave
 if mode_val == 'totaal_block':
     if not df_filtered.empty:
         agg_d = {col: 'sum' for col in alle_excel_kolommen + ['Total']}
@@ -344,7 +348,7 @@ else:
 st.markdown("### Tabel Overzicht")
 st.dataframe(df_display, use_container_width=True, hide_index=True)
 
-# Actie interface voor trolleys afboeken
+# --- TROLLEY AFBOEKEN / ACTIE PANEEL ---
 st.markdown("---")
 st.markdown("### Trolley Actie Registratie")
 
@@ -363,8 +367,10 @@ with col_act2:
 with col_act3:
     kie_trolley = st.selectbox("Selecteer Trolley Type", alle_excel_kolommen)
 
-if st.button("Trolley Afboeken / In Gebruik Nemen", type="primary"):
+if st.button("Trolley Afboeken / In Gebruik Nemen", type="primary", use_container_width=True):
     b_str = str(kie_block).strip()
+    
+    # Check of blok vrijgegeven is (anders 3x klik logica)
     if not is_blok_vrijgegeven(df_current, b_str, st.session_state.handmatige_vrijgaven):
         t_data = st.session_state.blok_klik_teller.get(b_str, {'tijd': 0, 'aantal': 0})
         if time.time() - t_data.get('tijd', 0) > 5.0:
@@ -378,11 +384,11 @@ if st.button("Trolley Afboeken / In Gebruik Nemen", type="primary"):
             if b_str not in st.session_state.handmatige_vrijgaven:
                 st.session_state.handmatige_vrijgaven.append(b_str)
             st.session_state.blok_klik_teller[b_str] = {'tijd': 0, 'aantal': 0}
-            st.success(f"Block {b_str} is succesvol vrijgegeven!")
+            st.success(f"🔓 Block {b_str} is succesvol vrijgegeven!")
             st.rerun()
         else:
             rest = 3 - t_data['aantal']
-            st.warning(f"Block {b_str} is vergrendeld. Klik nog {rest}x op de knop om dit blok vrij te geven.")
+            st.warning(f"🔒 Block {b_str} is vergrendeld. Klik nog {rest}x op de knop om dit blok vrij te geven.")
     else:
         bron_idx = None
         gebruikte_block = b_str
@@ -393,6 +399,7 @@ if st.button("Trolley Afboeken / In Gebruik Nemen", type="primary"):
             if int(df_current.at[m_idx, kie_trolley]) > 0:
                 bron_idx = m_idx
 
+        # Automatisch doorzoeken in latere vrijgegeven blokken als huidige op 0 staat
         if bron_idx is None:
             alle_b_ges = sorted(df_current['Block'].unique().tolist(), key=probeer_getal)
             try:
@@ -436,7 +443,11 @@ if st.button("Trolley Afboeken / In Gebruik Nemen", type="primary"):
                 )
                 df_current.at[bron_idx, 'Total'] = df_current.loc[bron_idx, alle_excel_kolommen].astype(int).sum()
                 st.session_state.tabel_data = df_current.to_dict('records')
-                st.success(f"Trolley {kie_trolley} succesvol afgeboekt!")
+                
+                if gebruikte_block == b_str:
+                    st.success(f"🚀 Trolley {kie_trolley} succesvol afgeboekt voor Block {b_str}!")
+                else:
+                    st.warning(f"⚠️ Block {b_str} was leeg! {kie_trolley} automatisch gepakt uit latere Block {gebruikte_block}.")
                 st.rerun()
         else:
             st.error("Geen voorraad beschikbaar van dit type in dit of latere vrijgegeven blokken!")
